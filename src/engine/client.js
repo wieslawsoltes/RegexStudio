@@ -31,6 +31,7 @@ export class RegexEngine extends EventTarget {
     this.status = 'loading';
     this.version = '';
     this.lastError = '';
+    this.loadingDetail = 'Downloading .NET runtime…';
   }
 
   start() {
@@ -39,6 +40,7 @@ export class RegexEngine extends EventTarget {
     this.status = 'loading';
     this.version = '';
     this.lastError = '';
+    this.loadingDetail = 'Downloading .NET runtime…';
     const generation = ++this.generation;
     try {
       const worker = this.workerFactory();
@@ -66,6 +68,13 @@ export class RegexEngine extends EventTarget {
 
   receive(message) {
     if (!message || typeof message !== 'object') return;
+    if (message.type === 'progress') {
+      if (!this.ready && typeof message.detail === 'string') {
+        this.loadingDetail = message.detail;
+        this.dispatchEvent(new Event('status'));
+      }
+      return;
+    }
     if (message.type === 'ready') {
       if (this.ready) return;
       if (typeof message.version !== 'string' || !message.version) {
@@ -76,6 +85,7 @@ export class RegexEngine extends EventTarget {
       this.startTimer = null;
       this.ready = true;
       this.status = 'ready';
+      this.loadingDetail = '';
       this.version = message.version;
       this.dispatchEvent(new Event('status'));
       return;
@@ -117,6 +127,7 @@ export class RegexEngine extends EventTarget {
     error = errorFrom(error, 'The .NET worker failed.');
     this.stopWorker(error);
     this.status = 'error';
+    this.loadingDetail = '';
     this.lastError = error.message;
     this.dispatchEvent(new Event('status'));
   }
