@@ -1,0 +1,13 @@
+<linker>
+  <assembly fullname="System.Text.RegularExpressions">
+    <!-- The trace adapter reads the runtime's compiled bytecode and calls its
+         real search optimizer. These are deliberately rooted and validated. -->
+    <type fullname="System.Text.RegularExpressions.RegexInterpreterFactory" preserve="all" />
+    <type fullname="System.Text.RegularExpressions.RegexInterpreterCode" preserve="all" />
+    <type fullname="System.Text.RegularExpressions.RegexFindOptimizations" preserve="all" />
+    <type fullname="System.Text.RegularExpressions.RegexCharClass">
+      <method name="CharInClass" />
+    </type>
+  </assembly>
+</linker>
+

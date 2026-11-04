@@ -20,7 +20,7 @@ jobs:
           node-version: '22'
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: '10.0.403'
       - name: Install browser workload
         run: dotnet workload install wasm-tools
       - name: Test JavaScript modules
@@ -29,6 +29,8 @@ jobs:
         run: dotnet run --project engine/RegexStudio.Engine.Tests -c Release
       - name: Build application
         run: npm run build
+      - name: Verify trimmed WebAssembly engine
+        run: node engine/wasm-smoke.mjs
       - uses: actions/configure-pages@v5
         with:
           enablement: true

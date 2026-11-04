@@ -1,0 +1,27 @@
+<Project>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
+    <RuntimeFrameworkVersion>10.0.14</RuntimeFrameworkVersion>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>RegexStudio.Engine</AssemblyName>
+    <RootNamespace>RegexStudio</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DefineConstants>$(DefineConstants);BROWSER</DefineConstants>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <WasmIncludeFullIcuData>true</WasmIncludeFullIcuData>
+    <WasmEnableWebcil>true</WasmEnableWebcil>
+    <WasmEnableHotReload>false</WasmEnableHotReload>
+    <WasmBuildNative>false</WasmBuildNative>
+    <WasmMainJSPath>bootstrap.js</WasmMainJSPath>
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+  </PropertyGroup>
+  <ItemGroup>
+    <TrimmerRootDescriptor Include="ILLink.Descriptors.xml" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+  <Import Project="../InProcessBuild.targets" Condition="'$(RegexStudioBuildInProcess)' == 'true'" />
+</Project>

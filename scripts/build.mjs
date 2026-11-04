@@ -5,7 +5,9 @@ const root = process.cwd();
 const webOnly = process.argv.includes('--web-only');
 if (!webOnly) {
   const sdk = process.env.DOTNET || 'dotnet';
-  const result = spawnSync(sdk,['publish','engine/RegexStudio.Engine/RegexStudio.Engine.csproj','-c','Release'],{stdio:'inherit',env:process.env});
+  const args=['publish','engine/RegexStudio.Engine/RegexStudio.Engine.csproj','-c','Release'];
+  if(process.env.REGEXSTUDIO_INPROCESS_BUILD==='1') args.push('-p:RegexStudioBuildInProcess=true','-m:1','-nr:false');
+  const result = spawnSync(sdk,args,{stdio:'inherit',env:process.env});
   if (result.status !== 0) process.exit(result.status || 1);
 }
 await rm('dist',{recursive:true,force:true});

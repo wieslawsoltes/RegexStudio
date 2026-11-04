@@ -1,0 +1,15 @@
+<Project>
+  <!-- Optional build mode for hosts which prohibit local IPC sockets. It runs
+       SDK build tasks in the existing MSBuild process; it does not change the
+       engine, its trimming inputs, or its runtime. Standard CI uses the SDK's
+       default task hosts. Opt in with -p:RegexStudioBuildInProcess=true. -->
+  <UsingTask TaskName="ILLink" AssemblyFile="$(ILLinkTasksAssembly)" TaskFactory="AssemblyTaskFactory" Override="true" Condition="'$(ILLinkTasksAssembly)' != ''" />
+  <UsingTask TaskName="ComputeManagedAssemblies" AssemblyFile="$(ILLinkTasksAssembly)" TaskFactory="AssemblyTaskFactory" Override="true" Condition="'$(ILLinkTasksAssembly)' != ''" />
+  <UsingTask TaskName="Microsoft.WebAssembly.Build.Tasks.WasmAppBuilder" AssemblyFile="$(WasmAppBuilderTasksAssemblyPath)" TaskFactory="AssemblyTaskFactory" Override="true" />
+  <UsingTask TaskName="Microsoft.WebAssembly.Build.Tasks.WasmLoadAssembliesAndReferences" AssemblyFile="$(WasmAppBuilderTasksAssemblyPath)" TaskFactory="AssemblyTaskFactory" Override="true" />
+  <UsingTask TaskName="Microsoft.WebAssembly.Build.Tasks.ManagedToNativeGenerator" AssemblyFile="$(WasmAppBuilderTasksAssemblyPath)" TaskFactory="AssemblyTaskFactory" Override="true" />
+  <UsingTask TaskName="Microsoft.WebAssembly.Build.Tasks.EmccCompile" AssemblyFile="$(WasmAppBuilderTasksAssemblyPath)" TaskFactory="AssemblyTaskFactory" Override="true" />
+  <UsingTask TaskName="Microsoft.WebAssembly.Build.Tasks.WasmCalculateInitialHeapSize" AssemblyFile="$(WasmAppBuilderTasksAssemblyPath)" TaskFactory="AssemblyTaskFactory" Override="true" />
+  <UsingTask TaskName="MonoTargetsTasks.MarshalingPInvokeScanner" AssemblyFile="$(MonoTargetsTasksAssemblyPath)" TaskFactory="AssemblyTaskFactory" Override="true" />
+  <UsingTask TaskName="EmitBundleObjectFiles" AssemblyFile="$(MonoTargetsTasksAssemblyPath)" TaskFactory="AssemblyTaskFactory" Override="true" />
+</Project>
