@@ -13,4 +13,6 @@ const server = http.createServer(async(req,res)=>{
     res.writeHead(200,{'Content-Type':types[path.extname(file)]||'application/octet-stream','Cache-Control':'no-cache'});res.end(data);
   }catch {res.writeHead(404,{'Content-Type':'text/plain'}).end('Not found');}
 });
-server.listen(Number(process.env.PORT||5173),'0.0.0.0',()=>console.log(`RegexStudio listening on ${server.address().port}`));
+const portIndex=process.argv.indexOf('--port');
+const hostIndex=process.argv.indexOf('--host');
+server.listen(Number(portIndex>=0?process.argv[portIndex+1]:process.env.PORT||5173),hostIndex>=0?process.argv[hostIndex+1]:'0.0.0.0',()=>console.log(`RegexStudio listening on ${server.address().port}`));
