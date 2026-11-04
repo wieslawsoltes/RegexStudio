@@ -142,6 +142,7 @@ let results = {},
   selectedTokenId = null,
   sourceController = null,
   uiController = null,
+  switchingProject = false,
   saved = true,
   projects = [],
   savedDatasets = [],
@@ -533,7 +534,9 @@ async function runSingle(operation) {
   const current = () =>
     generation === runGeneration &&
     project.id === projectId &&
-    pat().id === patternId;
+    pat().id === patternId &&
+    inputOperation === snapshot.operation &&
+    (pat().replacement || "") === snapshot.replacement;
   try {
     const result = await engine.run(snapshot);
     if (!current()) return;
@@ -648,7 +651,7 @@ async function importFiles(files) {
   for (const file of files) {
     try {
       const d = await parseData(file);
-      if (project.id !== projectId) return;
+      if (project.id !== projectId || switchingProject) return;
       d.id ||= uid();
       project.datasets.push(d);
       project.activeDatasetId = d.id;
@@ -750,14 +753,31 @@ function openSource() {
     [{ text: "Load data", action: "load-source", primary: true }],
   );
 }
+async function withWorkspaceTransition(action) {
+  if (switchingProject) return;
+  switchingProject = true;
+  const app = el("#app");
+  app.inert = true;
+  autosave.cancel();
+  queueRun.cancel();
+  sourceController?.abort();
+  sourceController = null;
+  try {
+    return await action();
+  } finally {
+    switchingProject = false;
+    app.inert = false;
+  }
+}
 async function loadProjectById(id) {
   try {
-    autosave.cancel();
-    await persistCurrent();
-    const loaded = await loadProject(id);
-    if (!loaded) throw new Error("Project not found.");
-    await applyProject(loaded);
-    toast(`Opened ${project.name}`, "success");
+    await withWorkspaceTransition(async () => {
+      await persistCurrent();
+      const loaded = await loadProject(id);
+      if (!loaded) throw new Error("Project not found.");
+      await applyProject(loaded);
+      toast(`Opened ${project.name}`, "success");
+    });
   } catch (e) {
     toast(e.message, "error");
   }
@@ -955,17 +975,18 @@ function bind() {
         case "create-project": {
           const name =
             el("#new-project-name").value.trim() || "Untitled project";
-          autosave.cancel();
-          await persistCurrent();
-          closeModal();
-          await applyProject({
-            id: uid(),
-            name,
-            version: 1,
-            patterns: [],
-            datasets: [],
-            workspace: { tests: [] },
-            layout: {},
+          await withWorkspaceTransition(async () => {
+            await persistCurrent();
+            closeModal();
+            await applyProject({
+              id: uid(),
+              name,
+              version: 1,
+              patterns: [],
+              datasets: [],
+              workspace: { tests: [] },
+              layout: {},
+            });
           });
           break;
         }
@@ -987,22 +1008,22 @@ function bind() {
           break;
         case "confirm-delete-project": {
           const id = el("#delete-project-id").value;
-          const deletingCurrent = id === project.id;
-          if (deletingCurrent) {
-            autosave.cancel();
-            await saveQueue;
-          }
-          await deleteProject(id);
-          projects = await listProjects();
-          closeModal();
-          if (deletingCurrent) {
-            const next = projects.length
-              ? await loadProject(projects[0].id)
-              : createProject();
-            await applyProject(next);
-          }
-          renderSidebar();
-          toast("Saved project removed.");
+          await withWorkspaceTransition(async () => {
+            const deletingCurrent = id === project.id;
+            if (deletingCurrent) await saveQueue;
+            else await persistCurrent();
+            await deleteProject(id);
+            projects = await listProjects();
+            closeModal();
+            if (deletingCurrent) {
+              const next = projects.length
+                ? await loadProject(projects[0].id)
+                : createProject();
+              await applyProject(next);
+            }
+            renderSidebar();
+            toast("Saved project removed.");
+          });
           break;
         }
         case "export-project": {
@@ -1242,14 +1263,13 @@ function bind() {
           );
           closeModal();
           break;
-        case "download-data-json":
+        case "download-data-json": {
+          const table = exportTable();
           downloadText(
             safeName(data().name.replace(/\.[^.]+$/, "")) + ".json",
             JSON.stringify(
-              exportTable().rows.map((r) =>
-                Object.fromEntries(
-                  exportTable().columns.map((c, i) => [c, r[i]]),
-                ),
+              table.rows.map((r) =>
+                Object.fromEntries(table.columns.map((c, i) => [c, r[i]])),
               ),
               null,
               2,
@@ -1258,15 +1278,16 @@ function bind() {
           );
           closeModal();
           break;
-        case "download-data-xlsx":
+        }
+        case "download-data-xlsx": {
+          const table = exportTable();
           downloadFile(
-            await exportXlsx(exportTable().rows, {
-              columns: exportTable().columns,
-            }),
+            await exportXlsx(table.rows, { columns: table.columns }),
             safeName(data().name.replace(/\.[^.]+$/, "")) + ".xlsx",
           );
           closeModal();
           break;
+        }
         case "download-workbook":
           downloadFile(
             await exportWorkbook(data().sheets),
@@ -1792,10 +1813,11 @@ function bind() {
       const file = e.target.files[0];
       if (file) {
         const loaded = deserializeProject(await file.text(), { newId: true });
-        autosave.cancel();
-        await persistCurrent();
-        await applyProject(loaded);
-        toast("Project imported.", "success");
+        await withWorkspaceTransition(async () => {
+          await persistCurrent();
+          await applyProject(loaded);
+          toast("Project imported.", "success");
+        });
       }
     } catch (err) {
       toast(err.message, "error");
@@ -1862,8 +1884,10 @@ function selectSource(start, end) {
 }
 function exportTable() {
   const d = data();
-  return !d.textEdited && d.rows?.length
-    ? { columns: d.columns, rows: d.rows }
+  return !d.textEdited &&
+    Array.isArray(d.rows) &&
+    (d.columns?.length || d.format !== "text" || d.rows.length)
+    ? { columns: d.columns || [], rows: d.rows }
     : {
         columns: ["Text"],
         rows: input()
