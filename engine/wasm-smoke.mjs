@@ -40,5 +40,16 @@ for (const request of [
 
 assert.equal(trace({ pattern: 'a+', input: 'aaa', maxSteps: 2 }).truncated, true);
 assert.equal(trace({ pattern: 'a+', input: 'aaa', options: 1024 }).error.code, 'NonBacktrackingTraceUnavailable');
+const surrogate = run({ pattern: '(?<x>\ud800)+', input: 'a\ud800\ud800z', operation: 'replace', replacement: '\udc00' });
+assert.equal(surrogate.error, undefined);
+assert.equal(surrogate.matches[0].value, '\ud800\ud800');
+assert.deepEqual(surrogate.matches[0].groups[1].captures.map(x => x.value), ['\ud800', '\ud800']);
+assert.equal(surrogate.replacement, 'a\udc00z');
+assert.deepEqual(run({ pattern: ',', input: '\ud800,\udc00', operation: 'split' }).splits, ['\ud800', '\udc00']);
+const surrogateTrace = trace({ pattern: '(?<x>\ud800)+', input: 'a\ud800\ud800z' });
+assert.equal(surrogateTrace.resultsVerified, true);
+assert.equal(surrogateTrace.matches[0].value, '\ud800\ud800');
+const everyCodeUnit = Array.from({ length: 65_536 }, (_, index) => String.fromCharCode(index)).join('');
+assert.equal(run({ pattern: '\\A[\\s\\S]*\\z', input: everyCodeUnit }).matches[0].value, everyCodeUnit);
 console.log('PASS: trimmed .NET 10.0.14 WebAssembly exports, captures, replacement, split, Unicode, culture, RTL, native traces and limits.');
 

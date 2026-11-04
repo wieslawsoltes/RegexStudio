@@ -1,0 +1,6 @@
+reference,customer,total,status
+EU-1042,"Northstar, Ltd",125.50,delivered
+US-0837,Studio Design,89.00,processing
+EU-1043,Open Workshop,240.75,delivered
+AP-1205,Paper & Ink,34.00,awaiting payment
+EU-12,Incomplete Reference,0.00,invalid

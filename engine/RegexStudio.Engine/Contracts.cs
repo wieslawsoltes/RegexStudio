@@ -116,7 +116,8 @@ public sealed class TraceInstruction
 }
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
-    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    Converters = [typeof(Utf16StringConverter)])]
 [JsonSerializable(typeof(RegexRequest))]
 [JsonSerializable(typeof(RegexResponse))]
 [JsonSerializable(typeof(TraceResponse))]

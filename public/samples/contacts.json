@@ -1,0 +1,9 @@
+{
+  "team": "Northstar Studio",
+  "contacts": [
+    { "name": "Alex Chen", "email": "alex.chen@studio.design", "role": "Designer" },
+    { "name": "Sara Miller", "email": "sara+work@example.com", "role": "Engineer" },
+    { "name": "Noah Williams", "email": "noah@northstar.io", "role": "Researcher" },
+    { "name": "Emma Davis", "email": "emma.davis@studio.design", "role": "Product lead" }
+  ]
+}

@@ -1,5 +1,7 @@
-const errorFrom = (value, fallback) => value instanceof Error
-  ? value : new Error(typeof value === 'string' && value ? value : fallback);
+const errorFrom = (value, fallback) =>
+  value instanceof Error
+    ? value
+    : new Error(typeof value === "string" && value ? value : fallback);
 
 /**
  * Owns one isolated .NET worker. Requests are dispatched in FIFO order so a
@@ -9,11 +11,12 @@ const errorFrom = (value, fallback) => value instanceof Error
  */
 export class RegexEngine extends EventTarget {
   constructor({
-    workerFactory = () => new Worker(new URL('./worker.js', import.meta.url), { type: 'module' }),
+    workerFactory = () =>
+      new Worker(new URL("./worker.js", import.meta.url), { type: "module" }),
     startupTimeoutMs = 90_000,
     executionTimeoutMs = 15_000,
     setTimer = (callback, delay) => setTimeout(callback, delay),
-    clearTimer = timer => clearTimeout(timer),
+    clearTimer = (timer) => clearTimeout(timer),
   } = {}) {
     super();
     this.workerFactory = workerFactory;
@@ -28,76 +31,102 @@ export class RegexEngine extends EventTarget {
     this.pending = new Map();
     this.active = null;
     this.startTimer = null;
-    this.status = 'loading';
-    this.version = '';
-    this.lastError = '';
-    this.loadingDetail = 'Downloading .NET runtime…';
+    this.status = "loading";
+    this.version = "";
+    this.lastError = "";
+    this.loadingDetail = "Downloading .NET runtime…";
   }
 
   start() {
     if (this.worker) return;
     this.ready = false;
-    this.status = 'loading';
-    this.version = '';
-    this.lastError = '';
-    this.loadingDetail = 'Downloading .NET runtime…';
+    this.status = "loading";
+    this.version = "";
+    this.lastError = "";
+    this.loadingDetail = "Downloading .NET runtime…";
     const generation = ++this.generation;
     try {
       const worker = this.workerFactory();
       this.worker = worker;
-      const current = () => this.worker === worker && this.generation === generation;
-      worker.onmessage = event => {
+      const current = () =>
+        this.worker === worker && this.generation === generation;
+      worker.onmessage = (event) => {
         if (current()) this.receive(event.data);
       };
-      worker.onerror = event => {
+      worker.onerror = (event) => {
         if (!current()) return;
         event.preventDefault?.();
-        this.fail(new Error(event.message || 'The .NET worker could not start or continue.'));
+        this.fail(
+          new Error(
+            event.message || "The .NET worker could not start or continue.",
+          ),
+        );
       };
       worker.onmessageerror = () => {
-        if (current()) this.fail(new Error('A response from the .NET worker could not be decoded. Retry the engine.'));
+        if (current())
+          this.fail(
+            new Error(
+              "A response from the .NET worker could not be decoded. Retry the engine.",
+            ),
+          );
       };
       this.startTimer = this.setTimer(() => {
-        if (current()) this.fail(new Error('The .NET engine took too long to load. Check your connection and retry.'));
+        if (current())
+          this.fail(
+            new Error(
+              "The .NET engine took too long to load. Check your connection and retry.",
+            ),
+          );
       }, this.startupTimeoutMs);
-      this.dispatchEvent(new Event('status'));
+      this.dispatchEvent(new Event("status"));
     } catch (error) {
-      this.fail(errorFrom(error, 'The browser could not create a .NET worker.'));
+      this.fail(
+        errorFrom(error, "The browser could not create a .NET worker."),
+      );
     }
   }
 
   receive(message) {
-    if (!message || typeof message !== 'object') return;
-    if (message.type === 'progress') {
-      if (!this.ready && typeof message.detail === 'string') {
+    if (!message || typeof message !== "object") return;
+    if (message.type === "progress") {
+      if (!this.ready && typeof message.detail === "string") {
         this.loadingDetail = message.detail;
-        this.dispatchEvent(new Event('status'));
+        this.dispatchEvent(new Event("status"));
       }
       return;
     }
-    if (message.type === 'ready') {
+    if (message.type === "ready") {
       if (this.ready) return;
-      if (typeof message.version !== 'string' || !message.version) {
-        this.fail(new Error('The .NET worker did not identify its runtime version. Retry the engine.'));
+      if (typeof message.version !== "string" || !message.version) {
+        this.fail(
+          new Error(
+            "The .NET worker did not identify its runtime version. Retry the engine.",
+          ),
+        );
         return;
       }
       this.clearTimer(this.startTimer);
       this.startTimer = null;
       this.ready = true;
-      this.status = 'ready';
-      this.loadingDetail = '';
+      this.status = "ready";
+      this.loadingDetail = "";
       this.version = message.version;
-      this.dispatchEvent(new Event('status'));
+      this.dispatchEvent(new Event("status"));
       return;
     }
-    if (message.type === 'failure') {
-      this.fail(errorFrom(message.error, 'The .NET worker failed.'));
+    if (message.type === "failure") {
+      this.fail(errorFrom(message.error, "The .NET worker failed."));
       return;
     }
     const job = this.pending.get(message.id);
     if (!job || this.active !== message.id) return;
-    this.finish(job, Object.hasOwn(message, 'error')
-      ? errorFrom(message.error, 'The .NET request failed.') : null, message.result);
+    this.finish(
+      job,
+      Object.hasOwn(message, "error")
+        ? errorFrom(message.error, "The .NET request failed.")
+        : null,
+      message.result,
+    );
     this.dispatchNext();
   }
 
@@ -124,21 +153,26 @@ export class RegexEngine extends EventTarget {
   }
 
   fail(error) {
-    error = errorFrom(error, 'The .NET worker failed.');
+    error = errorFrom(error, "The .NET worker failed.");
     this.stopWorker(error);
-    this.status = 'error';
-    this.loadingDetail = '';
+    this.status = "error";
+    this.loadingDetail = "";
     this.lastError = error.message;
-    this.dispatchEvent(new Event('status'));
+    this.dispatchEvent(new Event("status"));
   }
 
   request(method, request) {
     if (!this.ready) {
-      return Promise.reject(new Error(this.status === 'error'
-        ? this.lastError || 'The .NET engine is unavailable. Retry the engine.'
-        : 'The .NET 10 engine is still loading.'));
+      return Promise.reject(
+        new Error(
+          this.status === "error"
+            ? this.lastError ||
+              "The .NET engine is unavailable. Retry the engine."
+            : "The .NET 10 engine is still loading.",
+        ),
+      );
     }
-    if (method !== 'Run' && method !== 'Trace') {
+    if (method !== "Run" && method !== "Trace") {
       return Promise.reject(new Error(`Unknown regex operation: ${method}`));
     }
     let snapshot;
@@ -147,11 +181,23 @@ export class RegexEngine extends EventTarget {
       // Editing a project while another pattern runs cannot mutate this job.
       snapshot = structuredClone(request);
     } catch (error) {
-      return Promise.reject(errorFrom(error, 'The regex request could not be copied to the worker.'));
+      return Promise.reject(
+        errorFrom(
+          error,
+          "The regex request could not be copied to the worker.",
+        ),
+      );
     }
     const id = ++this.serial;
     return new Promise((resolve, reject) => {
-      this.pending.set(id, { id, method, request: snapshot, resolve, reject, timer: null });
+      this.pending.set(id, {
+        id,
+        method,
+        request: snapshot,
+        resolve,
+        reject,
+        timer: null,
+      });
       this.dispatchNext();
     });
   }
@@ -164,18 +210,33 @@ export class RegexEngine extends EventTarget {
     const generation = this.generation;
     this.active = job.id;
     job.timer = this.setTimer(() => {
-      if (this.worker !== worker || this.generation !== generation || this.active !== job.id) return;
+      if (
+        this.worker !== worker ||
+        this.generation !== generation ||
+        this.active !== job.id
+      )
+        return;
       const seconds = this.executionTimeoutMs / 1000;
-      this.fail(new Error(`Execution stopped after ${seconds} seconds to keep the workspace responsive. Reduce the input or simplify the expression, then retry the engine.`));
+      this.fail(
+        new Error(
+          `Execution stopped after ${seconds} seconds to keep the workspace responsive. Reduce the input or simplify the expression, then retry the engine.`,
+        ),
+      );
     }, this.executionTimeoutMs);
     try {
-      worker.postMessage({ id: job.id, method: job.method, request: job.request });
+      worker.postMessage({
+        id: job.id,
+        method: job.method,
+        request: job.request,
+      });
     } catch (error) {
-      if (error?.name === 'DataCloneError') {
+      if (error?.name === "DataCloneError") {
         this.finish(job, error);
         this.dispatchNext();
       } else {
-        this.fail(errorFrom(error, 'The request could not be sent to the .NET worker.'));
+        this.fail(
+          errorFrom(error, "The request could not be sent to the .NET worker."),
+        );
       }
     }
   }
@@ -188,22 +249,30 @@ export class RegexEngine extends EventTarget {
     else job.resolve(result);
   }
 
-  run(request) { return this.request('Run', request); }
-  trace(request) { return this.request('Trace', request); }
+  run(request) {
+    return this.request("Run", request);
+  }
+  trace(request) {
+    return this.request("Trace", request);
+  }
 
   cancel() {
-    this.stopWorker(new DOMException('Execution cancelled.', 'AbortError'));
+    this.stopWorker(new DOMException("Execution cancelled.", "AbortError"));
     this.start();
   }
 
   retry() {
-    this.stopWorker(new DOMException('The .NET engine was restarted.', 'AbortError'));
+    this.stopWorker(
+      new DOMException("The .NET engine was restarted.", "AbortError"),
+    );
     this.start();
   }
 
   dispose() {
-    this.stopWorker(new DOMException('The .NET engine was closed.', 'AbortError'));
-    this.status = 'idle';
-    this.dispatchEvent(new Event('status'));
+    this.stopWorker(
+      new DOMException("The .NET engine was closed.", "AbortError"),
+    );
+    this.status = "idle";
+    this.dispatchEvent(new Event("status"));
   }
 }

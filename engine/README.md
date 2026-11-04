@@ -68,6 +68,12 @@ each group's complete capture history. Sparse numeric group names and duplicate
 named groups are retained. All offsets and lengths count **UTF-16 code units**,
 as both .NET strings and JavaScript strings do.
 
+The JSON boundary also preserves isolated UTF-16 surrogate code units in input,
+patterns, replacements, capture values, split output, and trace data. A small
+source-generated JSON string converter retains JavaScript's `\\uXXXX` escapes
+instead of rejecting or replacing those units. Ordinary Unicode strings use
+the normal BCL serializer path.
+
 For `operation: 'replace'`, `replacement` in the response contains the result of
 `Regex.Replace`. For `operation: 'split'`, `splits` contains the result of
 `Regex.Split`, including captured delimiters. A display match limit does not

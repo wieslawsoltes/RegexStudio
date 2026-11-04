@@ -120,6 +120,33 @@ var previousCulture = CultureInfo.CurrentCulture;
 _ = Engine.Execute(new() { Pattern = "i", Input = "İ", Options = (int)RegexOptions.IgnoreCase, Culture = "tr-TR" });
 Check(CultureInfo.CurrentCulture.Equals(previousCulture), "Culture is restored after each request.");
 
+// JS strings and .NET strings both permit isolated UTF-16 surrogate code units.
+// System.Text.Json's default string converter does not preserve them, so verify
+// the complete request/result ABI instead of only testing native Regex calls.
+string[] stringRoundTrips = [
+    "\uD800", "\uDC00", "\uD800\uD800", "\uDC00\uD800", "\uD800\uDC00", "😀",
+    "quote\" slash\\ controls\b\f\n\r\t\0 \uD800 <>&'+ Łódź 東京 😀 end",
+    "literal \\uD800 and \\u1234", "\uD800\\uDC00", "\uFFFF\u0000\uDC00"
+];
+foreach (var value in stringRoundTrips)
+{
+    var json = JsonSerializer.Serialize(value, EngineJsonContext.Default.String);
+    var decoded = JsonSerializer.Deserialize(json, EngineJsonContext.Default.String);
+    Check(value == decoded, $"JSON preserves UTF-16 units: {json}");
+}
+var allCodeUnits = new string(Enumerable.Range(0, 65_536).Select(x => (char)x).ToArray());
+Check(JsonSerializer.Deserialize(JsonSerializer.Serialize(allCodeUnits, EngineJsonContext.Default.String), EngineJsonContext.Default.String) == allCodeUnits,
+    "Every one of the 65,536 UTF-16 code units roundtrips exactly through JSON.");
+var surrogateJson = """{"pattern":"(?<x>\ud800)+","input":"a\ud800\ud800z","operation":"replace","replacement":"\udc00"}""";
+var surrogate = JsonSerializer.Deserialize(Engine.Run(surrogateJson), EngineJsonContext.Default.RegexResponse)!;
+Check(surrogate.Error is null && surrogate.Matches[0].Value == "\uD800\uD800", "Input and pattern retain isolated surrogate code units through the JSON ABI.");
+Check(surrogate.Matches[0].Groups.Single(x => x.Name == "x").Captures.Select(x => x.Value).SequenceEqual(["\uD800", "\uD800"]), "Capture histories retain isolated surrogate units.");
+Check(surrogate.Replacement == "a\uDC00z", "Replacement input and output retain isolated surrogate units.");
+var surrogateTrace = JsonSerializer.Deserialize(Engine.Trace(surrogateJson), EngineJsonContext.Default.TraceResponse)!;
+Check(surrogateTrace.Error is null && surrogateTrace.ResultsVerified == true && surrogateTrace.Matches[0].Value == "\uD800\uD800", "Native tracing preserves and verifies isolated surrogate values.");
+var surrogateSplit = JsonSerializer.Deserialize(Engine.Run("""{"pattern":",","input":"\ud800,\udc00","operation":"split"}"""), EngineJsonContext.Default.RegexResponse)!;
+Check(surrogateSplit.Splits!.SequenceEqual(["\uD800", "\uDC00"]), "Split results preserve isolated surrogate values.");
+
 var catastrophic = Engine.Execute(new() { Pattern = "^(a+)+$", Input = new string('a', 10_000) + "!", TimeoutMs = 1 });
 Check(catastrophic.Error?.Code == "RegexMatchTimeout", "Catastrophic backtracking respects the .NET timeout.");
 

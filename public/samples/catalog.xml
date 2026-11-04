@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<catalog>
+  <product id="BK-1042"><name>Pattern notebook</name><price currency="USD">12.50</price><email>sales@studio.design</email></product>
+  <product id="PN-0837"><name>Graph pencil</name><price currency="USD">2.00</price><email>support@example.com</email></product>
+  <product id="LP-1205"><name>Desk lamp</name><price currency="EUR">34.00</price><email>hello@northstar.io</email></product>
+</catalog>

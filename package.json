@@ -10,5 +10,7 @@
     "build": "node scripts/build.mjs",
     "build:web": "node scripts/build.mjs --web-only"
   },
-  "engines": { "node": ">=22" }
+  "engines": {
+    "node": ">=22"
+  }
 }
