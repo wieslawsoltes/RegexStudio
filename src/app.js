@@ -1513,6 +1513,7 @@ function bind() {
           break;
         }
         case "check-lesson": {
+          queueRun.cancel();
           if (!lesson || !engine.ready) break;
           const currentLesson = lesson,
             generation = runGeneration,

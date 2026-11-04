@@ -4,6 +4,8 @@
 
 [Open RegexStudio](https://wieslawsoltes.github.io/RegexStudio/) · [Engine documentation](engine/README.md) · [Data adapters](src/data/README.md) · [Regex language tools](src/regex/README.md)
 
+![RegexStudio workspace with .NET matches, capture inspection, and explanations](docs/regexstudio.png)
+
 RegexStudio combines a Fluent-inspired, dockable HTML/JavaScript interface with **.NET 10.0.14 `System.Text.RegularExpressions` in WebAssembly**. Paste expressions and data, compare approaches, inspect captures, and step through the backtracking interpreter. No account or matching server is required.
 
 ## Start exploring
