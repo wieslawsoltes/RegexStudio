@@ -46,8 +46,33 @@ await hashDirectory(hash, "src", "src");
 await hashDirectory(hash, framework, "_framework");
 const digest = hash.digest("hex").slice(0, 20);
 const assetsPath = `assets/${digest}`;
+const previousReleases = await readFile(".release-cache/history.json", "utf8")
+  .then(JSON.parse)
+  .catch(() => []);
 await rm("dist", { recursive: true, force: true });
 await mkdir(path.join("dist", assetsPath), { recursive: true });
+const releaseHistory = [digest];
+if (Array.isArray(previousReleases)) {
+  for (const previous of previousReleases) {
+    if (releaseHistory.length >= 5) break;
+    if (
+      typeof previous !== "string" ||
+      !/^[a-f0-9]{20}$/.test(previous) ||
+      releaseHistory.includes(previous)
+    )
+      continue;
+    try {
+      await cp(
+        path.join(".release-cache", previous),
+        path.join("dist/assets", previous),
+        { recursive: true },
+      );
+      releaseHistory.push(previous);
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+    }
+  }
+}
 await cp("src", path.join("dist", assetsPath, "src"), { recursive: true });
 await cp(framework, path.join("dist", assetsPath, "_framework"), {
   recursive: true,
@@ -58,6 +83,10 @@ const html = (await readFile("index.html", "utf8"))
   .replace('src="./src/app.js"', `src="./${assetsPath}/src/app.js"`);
 await writeFile("dist/index.html", html);
 await writeFile("dist/.nojekyll", "");
+await writeFile(
+  "dist/release-history.json",
+  JSON.stringify(releaseHistory, null, 2) + "\n",
+);
 const revision =
   process.env.GITHUB_SHA ||
   spawnSync("git", ["rev-parse", "HEAD"], {

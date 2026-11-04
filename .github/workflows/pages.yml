@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
   pages: write
   id-token: write
 concurrency:
@@ -27,6 +28,10 @@ jobs:
         run: npm test
       - name: Test .NET engine
         run: dotnet run --project engine/RegexStudio.Engine.Tests -c Release
+      - name: Retain recent assets for cached pages
+        run: node scripts/restore-releases.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Build application
         run: npm run build
       - name: Verify trimmed WebAssembly engine

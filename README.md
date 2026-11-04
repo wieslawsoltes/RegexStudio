@@ -148,7 +148,7 @@ Data and regex modules can be imported independently. The engine provides a stan
 
 Pushes to `main` run [Build and deploy RegexStudio](.github/workflows/pages.yml). GitHub Actions installs Node 22, SDK 10.0.403 and `wasm-tools`; runs JavaScript/native tests; builds; checks the trimmed WASM exports; uploads `dist/`; and deploys to GitHub Pages. The workflow also supports manual runs.
 
-Application modules, the worker, and all .NET boot resources share a content-addressed release directory so browser caches cannot mix incompatible releases. `build-info.json` records the deployed commit and asset digest.
+Application modules, the worker, and all .NET boot resources share a content-addressed release directory so browser caches cannot mix incompatible releases. Deployments retain assets from the four previous available releases for pages that are already open or cached. `build-info.json` records the deployed commit and asset digest.
 
 The distribution is static. Hosting serves the application and runtime assets; regex execution and project storage run in the visitor's browser.
 
