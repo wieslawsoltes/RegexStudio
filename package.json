@@ -1,0 +1,14 @@
+{
+  "name": "regex-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A local-first .NET 10 regex workbench for exploring, comparing and learning regular expressions.",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "test": "node --test tests/*.test.js",
+    "build": "node scripts/build.mjs",
+    "build:web": "node scripts/build.mjs --web-only"
+  },
+  "engines": { "node": ">=22" }
+}

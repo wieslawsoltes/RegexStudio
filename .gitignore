@@ -1,0 +1,8 @@
+dist/
+node_modules/
+**/bin/
+**/obj/
+.openai/
+.artifacts/
+*.user
+.DS_Store
